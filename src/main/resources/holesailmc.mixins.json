@@ -3,6 +3,8 @@
   "package": "cyber.holesailmc.mixin",
   "compatibilityLevel": "${java}",
   "client": [
+    "ServerAddressMixin",
+    "ServerStatusPingerMixin",
     "TitleScreenMixin"
   ],
   "injectors": {

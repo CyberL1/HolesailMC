@@ -13,8 +13,10 @@ import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
 import java.util.zip.ZipInputStream;
 
 public class HolesailManager {
@@ -71,14 +73,34 @@ public class HolesailManager {
 
                 Path downloadedZip = assetResponse.body();
                 try (ZipInputStream zipInputStream = new ZipInputStream(Files.newInputStream(downloadedZip))) {
-                    Files.createDirectories(GetBinaryDirectory());
-                    Files.copy(zipInputStream, GetBinaryFile());
+                    while (zipInputStream.getNextEntry() != null) {
+                        Files.createDirectories(GetBinaryDirectory());
+                        Files.copy(zipInputStream, GetBinaryFile());
+                    }
 
+                    if (!GetBinaryFile().toFile().canExecute()) GetBinaryFile().toFile().setExecutable(true);
                     Files.deleteIfExists(HolesailMC.modDirectory.resolve(targetAsset));
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
             });
         });
+    }
+
+    public ProcessHandle FindProcessFor(String key) {
+        Stream<ProcessHandle> processes = ProcessHandle.allProcesses().filter(process -> process.info().commandLine().orElse("").equals(GetBinaryFile().toFile().getAbsolutePath() + " " + key));
+        List<ProcessHandle> processHandleList = processes.toList();
+
+        return !processHandleList.isEmpty() ? processHandleList.getFirst() : null;
+    }
+
+    public void StartProcessFor(String key) {
+        ProcessBuilder processBuilder = new ProcessBuilder(GetBinaryFile().toFile().getAbsolutePath(), key).directory(GetBinaryDirectory().toFile()).redirectErrorStream(true);
+
+        try {
+            processBuilder.start();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to start Holesail process:", e);
+        }
     }
 }
