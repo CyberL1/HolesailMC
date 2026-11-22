@@ -87,10 +87,15 @@ public class HolesailManager {
         });
     }
 
-    public ProcessHandle FindProcessFor(String key) {
-        Stream<ProcessHandle> processes = ProcessHandle.allProcesses().filter(process -> process.info().commandLine().orElse("").equals(GetBinaryFile().toFile().getAbsolutePath() + " " + key));
-        List<ProcessHandle> processHandleList = processes.toList();
+    public List<ProcessHandle> GetProcesses() {
+        Stream<ProcessHandle> processes = ProcessHandle.allProcesses().filter(process -> process.info().command().orElse("").equals(GetBinaryFile().toFile().getAbsolutePath()));
+        return processes.toList();
+    }
 
+    public ProcessHandle FindProcessFor(String key) {
+        List<ProcessHandle> allProcessList = GetProcesses();
+
+        List<ProcessHandle> processHandleList = allProcessList.stream().filter(process -> process.info().commandLine().orElse("").equals(GetBinaryFile().toFile().getAbsolutePath() + " " + key)).toList();
         return !processHandleList.isEmpty() ? processHandleList.getFirst() : null;
     }
 
@@ -101,6 +106,12 @@ public class HolesailManager {
             processBuilder.start();
         } catch (IOException e) {
             throw new RuntimeException("Failed to start Holesail process:", e);
+        }
+    }
+
+    public void StopAll() {
+        for (ProcessHandle process : GetProcesses()) {
+            process.destroy();
         }
     }
 }

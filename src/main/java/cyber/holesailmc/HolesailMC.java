@@ -1,6 +1,7 @@
 package cyber.holesailmc;
 
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,5 +23,7 @@ public class HolesailMC implements ClientModInitializer {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+
+        ClientLifecycleEvents.CLIENT_STOPPING.register(_ -> HolesailManager.getInstance().StopAll());
     }
 }
