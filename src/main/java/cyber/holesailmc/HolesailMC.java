@@ -24,6 +24,6 @@ public class HolesailMC implements ClientModInitializer {
             throw new RuntimeException(e);
         }
 
-        ClientLifecycleEvents.CLIENT_STOPPING.register(_ -> HolesailManager.getInstance().StopAll());
+        ClientLifecycleEvents.CLIENT_STOPPING.register(minecraft -> HolesailManager.getInstance().StopAll());
     }
 }
