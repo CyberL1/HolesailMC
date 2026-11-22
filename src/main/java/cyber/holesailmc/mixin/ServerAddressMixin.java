@@ -9,6 +9,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.io.IOException;
+
 @Mixin(ServerAddress.class)
 public class ServerAddressMixin {
     @Unique
@@ -34,10 +36,14 @@ public class ServerAddressMixin {
         if (process != null) {
             HolesailMC.LOGGER.info("Process already exists for key {}", input);
         } else {
-            holesailManager.StartProcessFor(input);
+            try {
+                process = holesailManager.StartProcessFor(input);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
 
-        cir.setReturnValue(new ServerAddress("127.0.0.1", 25565));
+        cir.setReturnValue(new ServerAddress("127.0.0.1", holesailManager.ExtractPort(process.info().commandLine().toString())));
     }
 
     @Unique

@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import java.io.IOException;
+import java.net.ServerSocket;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -95,18 +96,29 @@ public class HolesailManager {
     public ProcessHandle FindProcessFor(String key) {
         List<ProcessHandle> allProcessList = GetProcesses();
 
-        List<ProcessHandle> processHandleList = allProcessList.stream().filter(process -> process.info().commandLine().orElse("").equals(GetBinaryFile().toFile().getAbsolutePath() + " " + key)).toList();
+        List<ProcessHandle> processHandleList = allProcessList.stream().filter(process -> process.info().commandLine().orElse("").startsWith(GetBinaryFile().toFile().getAbsolutePath() + " " + key)).toList();
         return !processHandleList.isEmpty() ? processHandleList.getFirst() : null;
     }
 
-    public void StartProcessFor(String key) {
-        ProcessBuilder processBuilder = new ProcessBuilder(GetBinaryFile().toFile().getAbsolutePath(), key).directory(GetBinaryDirectory().toFile()).redirectErrorStream(true);
+    public ProcessHandle StartProcessFor(String key) throws IOException {
+        ProcessBuilder processBuilder;
+        try (ServerSocket serverSocket = new ServerSocket(0)) {
+            processBuilder = new ProcessBuilder(GetBinaryFile().toFile().getAbsolutePath(), key, "--port", String.valueOf(serverSocket.getLocalPort())).directory(GetBinaryDirectory().toFile()).redirectErrorStream(true);
+        }
+
+        ProcessHandle processHandle;
 
         try {
-            processBuilder.start();
+            processHandle = processBuilder.start().toHandle();
         } catch (IOException e) {
             throw new RuntimeException("Failed to start Holesail process:", e);
         }
+
+        return processHandle;
+    }
+
+    public int ExtractPort(String commandLine) {
+        return Integer.parseInt(commandLine.split("--port")[1].trim().replace("]", ""));
     }
 
     public void StopAll() {
