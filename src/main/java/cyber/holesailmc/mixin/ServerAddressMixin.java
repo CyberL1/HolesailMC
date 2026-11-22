@@ -10,21 +10,21 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(ServerAddress.class)
 public class ServerAddressMixin {
     @Inject(method = "isValidAddress", at = @At("HEAD"), cancellable = true)
-    private static void isValidAddress(String address, CallbackInfoReturnable<Boolean> cir) {
-        if (isHolesailAddress(address)) {
+    private static void isValidAddress(String input, CallbackInfoReturnable<Boolean> cir) {
+        if (isHolesailAddress(input)) {
             cir.setReturnValue(true);
         }
     }
 
     @Inject(method = "parseString", at = @At("HEAD"), cancellable = true)
-    private static void parseString(String address, CallbackInfoReturnable<ServerAddress> cir) {
-        if (isHolesailAddress(address)) {
+    private static void parseString(String input, CallbackInfoReturnable<ServerAddress> cir) {
+        if (isHolesailAddress(input)) {
             cir.setReturnValue(new ServerAddress("127.0.0.1", 25565));
         }
     }
 
     @Unique
-    private static boolean isHolesailAddress(String address) {
-        return address.startsWith("hs://");
+    private static boolean isHolesailAddress(String input) {
+        return input.startsWith("hs://");
     }
 }
