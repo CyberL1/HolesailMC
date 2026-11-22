@@ -1,5 +1,7 @@
 package cyber.holesailmc.mixin;
 
+import cyber.holesailmc.HolesailMC;
+import cyber.holesailmc.HolesailManager;
 import net.minecraft.client.multiplayer.resolver.ServerAddress;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -9,18 +11,33 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(ServerAddress.class)
 public class ServerAddressMixin {
+    @Unique
+    private static final HolesailManager holesailManager = HolesailManager.getInstance();
+
     @Inject(method = "isValidAddress", at = @At("HEAD"), cancellable = true)
     private static void isValidAddress(String input, CallbackInfoReturnable<Boolean> cir) {
-        if (isHolesailAddress(input)) {
-            cir.setReturnValue(true);
+        if (!isHolesailAddress(input)) {
+            return;
         }
+
+        cir.setReturnValue(true);
     }
 
     @Inject(method = "parseString", at = @At("HEAD"), cancellable = true)
     private static void parseString(String input, CallbackInfoReturnable<ServerAddress> cir) {
-        if (isHolesailAddress(input)) {
-            cir.setReturnValue(new ServerAddress("127.0.0.1", 25565));
+        if (!isHolesailAddress(input)) {
+            return;
         }
+
+        ProcessHandle process = holesailManager.FindProcessFor(input);
+
+        if (process != null) {
+            HolesailMC.LOGGER.info("Process already exists for key {}", input);
+        } else {
+            holesailManager.StartProcessFor(input);
+        }
+
+        cir.setReturnValue(new ServerAddress("127.0.0.1", 25565));
     }
 
     @Unique
