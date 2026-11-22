@@ -13,6 +13,7 @@ public class HolesailMC implements ClientModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger("HolesailMC");
 
     public static final Path modDirectory = FabricLoader.getInstance().getConfigDir().resolve(HolesailMC.MOD_ID);
+    public static boolean skipDownloadScreen = false;
 
     @Override
     public void onInitializeClient() {

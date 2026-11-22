@@ -3,7 +3,7 @@
   "package": "cyber.holesailmc.mixin",
   "compatibilityLevel": "${java}",
   "client": [
-    "ExampleMixin"
+    "TitleScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 1
