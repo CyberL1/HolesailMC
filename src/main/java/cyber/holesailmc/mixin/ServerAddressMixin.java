@@ -19,7 +19,7 @@ public class ServerAddressMixin {
     @Inject(method = "parseString", at = @At("HEAD"), cancellable = true)
     private static void parseString(String address, CallbackInfoReturnable<ServerAddress> cir) {
         if (isHolesailAddress(address)) {
-            cir.setReturnValue(new ServerAddress("127.0.0.1", 22565));
+            cir.setReturnValue(new ServerAddress("127.0.0.1", 25565));
         }
     }
 
