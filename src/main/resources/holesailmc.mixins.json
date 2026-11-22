@@ -1,0 +1,11 @@
+{
+  "required": true,
+  "package": "cyber.holesailmc.mixin",
+  "compatibilityLevel": "${java}",
+  "client": [
+    "ExampleMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

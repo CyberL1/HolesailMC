@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "${id}",
+  "version": "${version}",
+  "name": "${name}",
+  "description": "Access your Minecraft worlds trough Holesail",
+  "authors": [
+    "Cyber"
+  ],
+  "contact": {
+    "homepage": "https://stonecutter.kikugie.dev/",
+    "sources": "https://github.com/CyberL1/HolesailMC"
+  },
+  "license": "GPL-3.0",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "cyber.holesailmc.HolesailMC"
+    ]
+  },
+  "mixins": [
+    "holesailmc.mixins.json"
+  ],
+  "accessWidener": "holesailmc.ct",
+  "depends": {
+    "fabricloader": ">=${loader}",
+    "minecraft": "${minecraft}"
+  }
+}
