@@ -10,6 +10,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.io.IOException;
+import java.nio.file.Files;
 
 @Mixin(ServerAddress.class)
 public class ServerAddressMixin {
@@ -18,7 +19,7 @@ public class ServerAddressMixin {
 
     @Inject(method = "isValidAddress", at = @At("HEAD"), cancellable = true)
     private static void isValidAddress(String input, CallbackInfoReturnable<Boolean> cir) {
-        if (!isHolesailAddress(input)) {
+        if (!Files.exists(holesailManager.GetBinaryFile()) || !isHolesailAddress(input)) {
             return;
         }
 
@@ -27,7 +28,7 @@ public class ServerAddressMixin {
 
     @Inject(method = "parseString", at = @At("HEAD"), cancellable = true)
     private static void parseString(String input, CallbackInfoReturnable<ServerAddress> cir) {
-        if (!isHolesailAddress(input)) {
+        if (!Files.exists(holesailManager.GetBinaryFile()) || !isHolesailAddress(input)) {
             return;
         }
 
