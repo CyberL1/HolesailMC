@@ -1,0 +1,17 @@
+{
+  "tag": "2.4.1",
+  "checksums": {
+    "darwin": {
+      "amd64": "4c1e64c46102c118441902082aeb24f9a09e3becc1affd6cc6a91fb5efd0e302",
+      "arm64": "978ab5565ef149724f0e93dd787bf9579c5b6bc6de02f9090aa438eb8d9ebc0f"
+    },
+    "linux": {
+       "amd64": "bef353401f7a1b86bd6b4870fa21bc3cab478c23753804ab72300755df28eae0"
+,      "arm64": "34c59974f14cdda800e9bc7cbf4a1ee6873e538af5a8bb5a7c48758496c5a8de"
+    },
+    "win32": {
+      "amd64": "a9f43e7506dd401d0b28753a3ac9c49c2ec96af66cd252904ba59f624ad62b32",
+      "arm64": "8131bdd95fdff8a99e0c5137a4814b292af477f9110bb022a1ad90528af54173"
+    }
+  }
+}

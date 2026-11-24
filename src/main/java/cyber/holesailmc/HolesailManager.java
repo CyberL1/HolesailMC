@@ -1,19 +1,23 @@
 package cyber.holesailmc;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -38,53 +42,57 @@ public class HolesailManager {
 
     public CompletableFuture<Void> DownloadHolesail() {
         final HttpClient httpClient = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).connectTimeout(Duration.ofSeconds(30)).build();
-        final HttpRequest holesailReleaseGetRequest = HttpRequest.newBuilder().GET().uri(URI.create("https://api.github.com/repos/holesail/holesail/releases/latest")).header("User-Agent", "HolesailMC/1.0").build();
 
-        return httpClient.sendAsync(holesailReleaseGetRequest, HttpResponse.BodyHandlers.ofString()).thenAccept(response -> {
-            JsonObject release = JsonParser.parseString(response.body()).getAsJsonObject();
-            JsonArray assets = release.getAsJsonArray("assets");
+        InputStream releaseManifestInputStream = HolesailMC.class.getResourceAsStream("/assets/" + HolesailMC.MOD_ID + "/release-manifest.json");
 
-            String targetAsset = String.format("%s-%s.zip", System.getProperty("os.name"), System.getProperty("os.arch")).toLowerCase().replace("amd", "x");
-            URI assetUrl = null;
+        if (releaseManifestInputStream == null) {
+            throw new RuntimeException("releaseManifestInputStream == null");
+        }
 
-            for (JsonElement element : assets) {
-                JsonObject asset = element.getAsJsonObject();
+        InputStreamReader releaseManifestReader = new InputStreamReader(releaseManifestInputStream, StandardCharsets.UTF_8);
+        JsonObject releaseManifest = JsonParser.parseReader(releaseManifestReader).getAsJsonObject();
 
-                if (Objects.equals(asset.get("name").getAsString(), targetAsset)) {
-                    assetUrl = URI.create(asset.get("browser_download_url").getAsString());
-                    break;
-                }
-            }
+        String targetAsset = String.format("%s-%s.zip", System.getProperty("os.name"), System.getProperty("os.arch")).toLowerCase().replace("amd", "x");
+        HolesailMC.LOGGER.info("Downloading {}", targetAsset);
 
-            if (assetUrl == null) {
-                throw new RuntimeException("assetUrl is null");
-            }
+        HttpRequest assetDownloadRequest = HttpRequest.newBuilder().GET().uri(URI.create(String.format("https://github.com/holesail/holesail/releases/download/%s/%s", releaseManifest.get("tag").getAsString(), targetAsset))).header("User-Agent", "HolesailMC/1.0").build();
 
-            HolesailMC.LOGGER.info("Downloading {}", targetAsset);
-
-            HttpRequest assetDownloadRequest = HttpRequest.newBuilder().GET().uri(assetUrl).header("User-Agent", "HolesailMC/1.0").build();
-
-            httpClient.sendAsync(assetDownloadRequest, HttpResponse.BodyHandlers.ofFile(HolesailMC.modDirectory.resolve(targetAsset))).thenAccept(assetResponse -> {
+        return httpClient.sendAsync(assetDownloadRequest, HttpResponse.BodyHandlers.ofFile(HolesailMC.modDirectory.resolve(targetAsset))).thenAcceptAsync(assetResponse -> {
+            try {
                 if (assetResponse.statusCode() != 200) {
-                    HolesailMC.LOGGER.error("Failed: {}", assetResponse.statusCode());
-                    return;
+                    throw new RuntimeException("Status not 200: " + assetResponse.statusCode());
                 }
-
-                HolesailMC.LOGGER.info("Finished");
 
                 Path downloadedZip = assetResponse.body();
-                try (ZipInputStream zipInputStream = new ZipInputStream(Files.newInputStream(downloadedZip))) {
-                    while (zipInputStream.getNextEntry() != null) {
-                        Files.createDirectories(GetBinaryDirectory());
-                        Files.copy(zipInputStream, GetBinaryFile());
-                    }
 
-                    if (!GetBinaryFile().toFile().canExecute()) GetBinaryFile().toFile().setExecutable(true);
+                MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
+
+                byte[] bytes = Files.readAllBytes(downloadedZip);
+                byte[] digestedBytes = messageDigest.digest(bytes);
+
+                String zipChecksum = HexFormat.of().formatHex(digestedBytes);
+
+                HolesailMC.LOGGER.info("Verifying checksum: {}", zipChecksum);
+
+                String expectedChecksum = releaseManifest.get("checksums").getAsJsonObject().get(System.getProperty("os.name").toLowerCase()).getAsJsonObject().get(System.getProperty("os.arch").toLowerCase()).getAsString();
+
+                if (!Objects.equals(expectedChecksum, zipChecksum)) {
                     Files.deleteIfExists(HolesailMC.modDirectory.resolve(targetAsset));
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
+                    throw new RuntimeException("Checksum mismatch: expected: " + expectedChecksum + ", got: " + zipChecksum);
                 }
-            });
+
+                ZipInputStream zipInputStream = new ZipInputStream(Files.newInputStream(downloadedZip));
+
+                while (zipInputStream.getNextEntry() != null) {
+                    Files.createDirectories(GetBinaryDirectory());
+                    Files.copy(zipInputStream, GetBinaryFile());
+                }
+
+                if (!GetBinaryFile().toFile().canExecute()) GetBinaryFile().toFile().setExecutable(true);
+                Files.deleteIfExists(HolesailMC.modDirectory.resolve(targetAsset));
+            } catch (NoSuchAlgorithmException | IOException e) {
+                throw new RuntimeException(e);
+            }
         });
     }
 
