@@ -104,25 +104,21 @@ public class HolesailManager {
     public ProcessHandle FindProcessFor(String key) {
         List<ProcessHandle> allProcessList = GetProcesses();
 
-        List<ProcessHandle> processHandleList = allProcessList.stream().filter(process -> process.info().commandLine().orElse("").startsWith(GetBinaryFile().toFile().getAbsolutePath() + " " + key)).toList();
+        List<ProcessHandle> processHandleList = allProcessList.stream().filter(process -> process.info().commandLine().orElse("").split(" ")[1].equals(key)).toList();
         return !processHandleList.isEmpty() ? processHandleList.getFirst() : null;
     }
 
-    public ProcessHandle StartProcessFor(String key) throws IOException {
+    public Process StartProcessFor(String key) throws IOException {
         ProcessBuilder processBuilder;
         try (ServerSocket serverSocket = new ServerSocket(0)) {
-            processBuilder = new ProcessBuilder(GetBinaryFile().toFile().getAbsolutePath(), key, "--port", String.valueOf(serverSocket.getLocalPort())).directory(GetBinaryDirectory().toFile()).redirectErrorStream(true);
+            processBuilder = new ProcessBuilder(GetBinaryFile().toFile().getAbsolutePath(), key, "--port", String.valueOf(serverSocket.getLocalPort())).directory(GetBinaryDirectory().toFile());
         }
 
-        ProcessHandle processHandle;
-
         try {
-            processHandle = processBuilder.start().toHandle();
+            return processBuilder.start();
         } catch (IOException e) {
             throw new RuntimeException("Failed to start Holesail process:", e);
         }
-
-        return processHandle;
     }
 
     public int ExtractPort(String commandLine) {
