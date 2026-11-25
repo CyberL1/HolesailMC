@@ -125,9 +125,7 @@ public class HolesailManager {
         return Integer.parseInt(commandLine.split("--port")[1].trim().replace("]", ""));
     }
 
-    public void StopAll() {
-        for (ProcessHandle process : GetProcesses()) {
-            process.destroy();
-        }
+    public String ExtractConnector(String commandLine) {
+        return "hs://" + commandLine.split("hs://")[1].replace("--port", "").replace("]","").split(" ")[0];
     }
 }
