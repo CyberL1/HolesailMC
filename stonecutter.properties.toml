@@ -2,7 +2,7 @@
 mod.id = "holesailmc"
 mod.name = "Holesail MC"
 mod.group = "cyber.holesailmc"
-mod.version = "0.1.0"
+mod.version = "1.0.0"
 
 deps.fabric_loader = "0.20.1"
 loomx.loom_version = "1.19-SNAPSHOT"
